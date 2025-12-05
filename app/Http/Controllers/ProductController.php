@@ -5,121 +5,155 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
 
 class ProductController extends Controller
 {
-    // GET all products
+    // GET /products
     public function index()
     {
-        $products = Product::all();
-
-        return response()->json([
-            'message' => 'List of products',
-            'data' => $products
-        ]);
+        return response()->json(
+            Product::with(['store','productCategory'])->get(),
+            200
+        );
     }
 
-    // GET product by ID
+    // GET /products/{id}
     public function show($id)
     {
-        $product = Product::find($id);
+        $product = Product::with([
+            'store','productCategory','productImages','productReviews'
+        ])->findOrFail($id);
 
-        if (!$product) {
-            return response()->json([
-                'message' => 'Product not found'
-            ], 404);
-        }
-
-        return response()->json([
-            'message' => 'Product detail',
-            'data' => $product
-        ]);
+        return response()->json($product, 200);
     }
 
-    // POST product
+
+    // ADMIN & SELLER ONLY
     public function store(Request $request)
     {
+        $user = Auth::user();
+
+        // Jika bukan admin atau seller → blokir
+        if (!in_array($user->role, ['admin', 'seller'])) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        // Jika seller → gunakan store_id miliknya
+        if ($user->role === 'seller') {
+            $request->merge([
+                'store_id' => $user->store->id
+            ]);
+        }
+
         $request->validate([
-            'store_id' => 'required',
-            'product_category_id' => 'required',
+            'store_id' => 'required|exists:stores,id',
+            'product_category_id' => 'required|exists:product_categories,id',
             'name' => 'required|string|max:255',
-            'about' => 'required',
+            'description' => 'required|string',
             'condition' => 'required|in:new,second',
             'price' => 'required|numeric',
-            'weight' => 'required|numeric',
+            'weight' => 'required|integer',
             'stock' => 'required|integer'
         ]);
+
+        // generate slug unik
+        $slug = Str::slug($request->name);
+        $counter = 1;
+        $originalSlug = $slug;
+        while (Product::where('slug', $slug)->exists()) {
+            $slug = $originalSlug . '-' . $counter++;
+        }
 
         $product = Product::create([
             'store_id' => $request->store_id,
             'product_category_id' => $request->product_category_id,
             'name' => $request->name,
-            'slug' => Str::slug($request->name . '-' . uniqid()),
-            'about' => $request->about,
+            'slug' => $slug,
+            'description' => $request->description,
             'condition' => $request->condition,
             'price' => $request->price,
             'weight' => $request->weight,
-            'stock' => $request->stock,
+            'stock' => $request->stock
         ]);
 
         return response()->json([
-            'message' => 'Product created',
+            'message' => 'Product created successfully',
             'data' => $product
         ], 201);
     }
 
-    // PUT product/{id}
+
+    // ADMIN & SELLER ONLY
     public function update(Request $request, $id)
     {
-        $product = Product::find($id);
+        $user = Auth::user();
+        $product = Product::findOrFail($id);
 
-        if (!$product) {
-            return response()->json([
-                'message' => 'Product not found'
-            ], 404);
+        // Seller hanya boleh ubah produk milik tokonya
+        if ($user->role === 'seller' && $product->store_id !== $user->store->id) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        // Member tidak boleh update
+        if ($user->role === 'member') {
+            return response()->json(['message' => 'Unauthorized'], 403);
         }
 
         $request->validate([
+            'product_category_id' => 'sometimes|exists:product_categories,id',
             'name' => 'sometimes|string|max:255',
-            'about' => 'sometimes',
+            'description' => 'sometimes|string',
             'condition' => 'sometimes|in:new,second',
             'price' => 'sometimes|numeric',
-            'weight' => 'sometimes|numeric',
+            'weight' => 'sometimes|integer',
             'stock' => 'sometimes|integer'
         ]);
 
-        // Agar slug tidak berubah otomatis kalau nama tidak diubah
-        $data = $request->only([
-            'name', 'about', 'condition', 'price', 'weight', 'stock'
-        ]);
-
+        // Jika nama berubah, update slug
         if ($request->has('name')) {
-            $data['slug'] = Str::slug($request->name . '-' . uniqid());
+            $slug = Str::slug($request->name);
+            $counter = 1;
+            $originalSlug = $slug;
+
+            while (Product::where('slug', $slug)->where('id', '!=', $id)->exists()) {
+                $slug = $originalSlug . '-' . $counter++;
+            }
+
+            $product->slug = $slug;
         }
 
-        $product->update($data);
+        $product->update($request->except('name'));
+        if ($request->has('name')) {
+            $product->name = $request->name;
+            $product->save();
+        }
 
         return response()->json([
-            'message' => 'Product updated',
+            'message' => 'Product updated successfully',
             'data' => $product
         ]);
     }
 
-    // DELETE product/{id}
+
+    // ADMIN & SELLER ONLY
     public function destroy($id)
     {
-        $product = Product::find($id);
+        $user = Auth::user();
+        $product = Product::findOrFail($id);
 
-        if (!$product) {
-            return response()->json([
-                'message' => 'Product not found'
-            ], 404);
+        // Seller hanya boleh delete produk miliknya
+        if ($user->role === 'seller' && $product->store_id !== $user->store->id) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        // Member tidak boleh delete
+        if ($user->role === 'member') {
+            return response()->json(['message' => 'Unauthorized'], 403);
         }
 
         $product->delete();
 
-        return response()->json([
-            'message' => 'Product deleted'
-        ]);
+        return response()->json(['message' => 'Product deleted successfully']);
     }
 }

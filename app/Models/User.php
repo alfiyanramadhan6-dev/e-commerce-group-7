@@ -23,6 +23,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'store_request_status',
     ];
 
     /**
@@ -64,6 +65,7 @@ class User extends Authenticatable
     {
         return $this->store()->exists() && $this->store->is_verified;
     }
+
     // relationships can hava one store 
     public function store()
     {
@@ -74,4 +76,10 @@ class User extends Authenticatable
     {
         return $this->hasOne(Buyer::class);
     }
+
+    public function hasPendingSellerRequest()
+    {
+        return $this->store_request_status === 'pending';
+    }
+
 }
