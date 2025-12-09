@@ -1,3 +1,24 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Smooth animation for UI elements */
+* {
+  transition: all .25s ease;
+}
+
+/* Sweet hover */
+.hover-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 25px rgba(0,0,0,0.06);
+}
+
+/* Gradient section */
+.sweet-gradient {
+  background: linear-gradient(180deg, #F7FBFF 0%, #FFFFFF 100%);
+}
+
+/* Floating subtle shadow */
+.sweet-shadow {
+  box-shadow: 0 10px 30px rgba(162,210,255,0.25);
+}

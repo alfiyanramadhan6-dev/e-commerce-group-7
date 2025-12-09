@@ -3,70 +3,81 @@
 namespace App\Http\Controllers;
 
 use App\Models\Transaction;
+use App\Models\Product;
+use App\Models\Buyer;
 use Illuminate\Http\Request;
 
 class TransactionController extends Controller
 {
-    // MEMBER - see own transactions
+    /**
+     * Menampilkan riwayat transaksi user
+     */
     public function index()
     {
-        $buyerId = auth()->id();
+        $buyer = auth()->user()->buyer;
 
-        $transactions = Transaction::with(['transactionDetails.product'])
-            ->where('buyer_id', $buyerId)
-            ->orderBy('created_at', 'desc')
+        if (!$buyer) {
+            $buyer = Buyer::create(['user_id' => auth()->id()]);
+        }
+
+        $transactions = Transaction::with('details.product')
+            ->where('buyer_id', $buyer->id)
+            ->latest()
             ->get();
 
-        return response()->json($transactions);
+        return view('user.transactions.index', compact('transactions'));
     }
 
-
-    // MEMBER - detail transaction
+    /**
+     * Menampilkan detail transaksi
+     */
     public function show($id)
     {
-        $buyerId = auth()->id();
+        $buyer = auth()->user()->buyer;
 
-        $transaction = Transaction::with(['transactionDetails.product'])
-            ->where('buyer_id', $buyerId)
+        if (!$buyer) {
+            $buyer = Buyer::create(['user_id' => auth()->id()]);
+        }
+
+        $transaction = Transaction::with(['details.product', 'store'])
+            ->where('buyer_id', $buyer->id)
             ->findOrFail($id);
 
-        return response()->json($transaction);
+        return view('user.transactions.show', compact('transaction'));
     }
 
-
-    // SELLER - list orders for seller's store
+    /**
+     * Seller melihat semua order untuk tokonya
+     */
     public function sellerOrders()
     {
-        $storeId = auth()->user()->store->id;
+        $store = auth()->user()->store;
 
-        $orders = Transaction::with(['buyer', 'transactionDetails.product'])
-            ->where('store_id', $storeId)
-            ->orderBy('created_at', 'desc')
+        $orders = Transaction::with(['details.product', 'buyer.user'])
+            ->where('store_id', $store->id)
+            ->latest()
             ->get();
 
-        return response()->json($orders);
+        return view('seller.orders.index', compact('orders'));
     }
 
-
-    // SELLER - mark order as shipped
+    /**
+     * Seller mengupdate status pengiriman
+     */
     public function shipOrder(Request $request, $id)
     {
         $request->validate([
-            'tracking_number' => 'required|string|max:255'
+            'tracking_number' => 'required',
         ]);
 
-        $storeId = auth()->user()->store->id;
+        $store = auth()->user()->store;
 
-        $transaction = Transaction::where('store_id', $storeId)->findOrFail($id);
+        $transaction = Transaction::where('store_id', $store->id)->findOrFail($id);
 
-        $transaction->update([
-            'tracking_number' => $request->tracking_number,
-            'payment_status'  => 'shipped'
-        ]);
+        $transaction->shipping = 'shipped';
+        $transaction->tracking_number = $request->tracking_number;
+        $transaction->save();
 
-        return response()->json([
-            'message' => 'Order shipped successfully',
-            'data'    => $transaction
-        ]);
+        return back()->with('success', 'Status pengiriman berhasil diperbarui!');
     }
 }

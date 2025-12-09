@@ -3,30 +3,75 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\ProductCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 
 class ProductController extends Controller
 {
-    // GET /products
+
+// CONTROLLER USER SIDE
+    /**
+     * Homepage (public), menampilkan produk terbaru & kategori
+     */
+    public function publicHome()
+    {
+        // Ambil 12 produk terbaru dengan kategori + gambar
+        $products = Product::with(['category', 'images'])
+            ->latest()
+            ->take(8)
+            ->get();
+
+        // Ambil semua kategori untuk ditampilkan di homepage
+        $categories = ProductCategory::all();
+
+        // Kirim ke view
+        return view('landing', compact('products', 'categories'));
+    }
+
+    /**
+     * List semua produk (public)
+     */
     public function index()
     {
-        return response()->json(
-            Product::with(['store','productCategory'])->get(),
-            200
-        );
+        // dengan category & images agar lebih efisien (avoid n+1)
+        $products = Product::with(['category', 'images'])
+            ->paginate(12);
+
+        $categories = ProductCategory::all();
+
+        return view('user.products.index', compact('products', 'categories'));
     }
 
-    // GET /products/{id}
+    /**
+     * Detail produk
+     */
     public function show($id)
     {
-        $product = Product::with([
-            'store','productCategory','productImages','productReviews'
-        ])->findOrFail($id);
+        $product = Product::with(['images', 'category', 'store'])->findOrFail($id);
 
-        return response()->json($product, 200);
+        return view('user.products.show', compact('product'));
     }
+
+    // // GET /products
+    // public function index()
+    // {
+    //     return response()->json(
+    //         Product::with(['store','productCategory'])->get(),
+    //         200
+    //     );
+    // }
+
+    // // GET /products/{id}
+    // public function show($id)
+    // {
+    //     $product = Product::with([
+    //         'store','productCategory','productImages','productReviews'
+    //     ])->findOrFail($id);
+
+    //     return response()->json($product, 200);
+    // }
 
 
     // ADMIN & SELLER ONLY
