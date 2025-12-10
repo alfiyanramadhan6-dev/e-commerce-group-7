@@ -10,16 +10,14 @@ class ProductCategorySeeder extends Seeder
 {
     public function run(): void
     {
-        // matikan foreign key
+        // Nonaktifkan FK
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-
-        // kosongkan tabel
         DB::table('product_categories')->truncate();
-
-        // aktifkan lagi foreign key
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        // Kategori utama
+        // ==========================
+        // MAIN CATEGORIES
+        // ==========================
         $mainCategories = [
             ['name' => 'Cake', 'tagline' => 'Aneka cake lezat', 'description' => 'Kumpulan cake premium'],
             ['name' => 'Pastry', 'tagline' => 'Pastry renyah & fresh', 'description' => 'Croissant & pastry'],
@@ -31,20 +29,24 @@ class ProductCategorySeeder extends Seeder
 
         $categoryIds = [];
 
-        foreach ($mainCategories as $cat) {
+        foreach ($mainCategories as $index => $cat) {
+            $imageNumber = $index + 1;
+
             $id = DB::table('product_categories')->insertGetId([
-                'parent_id' => null,
-                'image' => null,
-                'name' => $cat['name'],
-                'slug' => Str::slug($cat['name']),
-                'tagline' => $cat['tagline'],
-                'description' => $cat['description'],
+                'parent_id'  => null,
+                'image'      => 'categories/' . $imageNumber . '.png',
+                'name'       => $cat['name'],
+                'slug'       => Str::slug($cat['name']),
+                'tagline'    => $cat['tagline'],
+                'description'=> $cat['description'],
             ]);
 
             $categoryIds[$cat['name']] = $id;
         }
 
-        // Subkategori
+        // ==========================
+        // SUB CATEGORIES
+        // ==========================
         $subCategories = [
             ['parent' => 'Cake', 'name' => 'Chocolate Cake'],
             ['parent' => 'Cake', 'name' => 'Cheesecake'],
@@ -58,13 +60,15 @@ class ProductCategorySeeder extends Seeder
             ['parent' => 'Dessert Box', 'name' => 'Tiramisu Box'],
         ];
 
-        foreach ($subCategories as $sub) {
+        foreach ($subCategories as $i => $sub) {
+            $imageNumber = 7 + $i; // Mulai dari 7.png
+
             DB::table('product_categories')->insert([
-                'parent_id' => $categoryIds[$sub['parent']],
-                'image' => null,
-                'name' => $sub['name'],
-                'slug' => Str::slug($sub['name']),
-                'tagline' => $sub['name'],
+                'parent_id'   => $categoryIds[$sub['parent']],
+                'image'       => 'categories/' . $imageNumber . '.png',
+                'name'        => $sub['name'],
+                'slug'        => Str::slug($sub['name']),
+                'tagline'     => $sub['name'],
                 'description' => $sub['name'] . ' premium'
             ]);
         }

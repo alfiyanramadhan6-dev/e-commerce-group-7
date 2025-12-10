@@ -18,11 +18,21 @@ class ProductCategory extends Model
         'description',
     ];
 
-    /**
-     * Relasi: kategori memiliki banyak produk
-     */
+    // RELASI KE PRODUK
     public function products()
     {
-        return $this->hasMany(Product::class, 'product_category_id');
+        return $this->hasMany(Product::class);
+    }
+
+    // RELASI KE SUB CATEGORY
+    public function children()
+    {
+        return $this->hasMany(ProductCategory::class, 'parent_id');
+    }
+
+    // RELASI KE PARENT CATEGORY
+    public function parent()
+    {
+        return $this->belongsTo(ProductCategory::class, 'parent_id');
     }
 }

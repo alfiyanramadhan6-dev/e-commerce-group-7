@@ -9,32 +9,29 @@ use Illuminate\Support\Facades\Storage;
 
 class ProductCategoryController extends Controller
 {
-    //GET /categories/
+    // ======================
+    // HALAMAN KATEGORI (WEB)
+    // ======================
     public function index()
     {
-        $categories = ProductCategory::with('children')
-            ->whereNull('parent_id')
-            ->get();
+        $categories = ProductCategory::whereNull('parent_id')->get();
 
-        return response()->json([
-            'success' => true,
-            'data' => $categories
-        ]);
+        return view('user.categories.index', compact('categories'));
     }
 
-    //GET /categories/{id}/products/
+    // ======================
+    // HALAMAN PRODUK PER KATEGORI
+    // ======================
     public function listProducts($id)
     {
         $category = ProductCategory::with('products')->findOrFail($id);
 
-        return response()->json([
-            'success' => true,
-            'category' => $category->name,
-            'products' => $category->products
-        ]);
+        return view('user.categories.products', compact('category'));
     }
 
-    //POST /categories
+    // ======================
+    // API STORE CATEGORY
+    // ======================
     public function store(Request $request)
     {
         $request->validate([
@@ -60,14 +57,12 @@ class ProductCategoryController extends Controller
             'description' => $request->description,
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Kategori berhasil dibuat',
-            'data' => $category
-        ], 201);
+        return redirect()->back()->with('success', 'Kategori berhasil ditambahkan');
     }
 
-    //PUT /categories/{id}
+    // ======================
+    // UPDATE CATEGORY
+    // ======================
     public function update(Request $request, $id)
     {
         $category = ProductCategory::findOrFail($id);
@@ -98,28 +93,22 @@ class ProductCategoryController extends Controller
             'description' => $request->description,
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Kategori berhasil diupdate',
-            'data' => $category
-        ]);
+        return redirect()->back()->with('success', 'Kategori diperbarui');
     }
 
-    // DELETE /categories/{id}
+    // ======================
+    // DELETE
+    // ======================
     public function destroy($id)
     {
         $category = ProductCategory::findOrFail($id);
 
-        // hapus image
         if ($category->image) {
             Storage::disk('public')->delete($category->image);
         }
 
         $category->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Kategori berhasil dihapus'
-        ]);
+        return redirect()->back()->with('success', 'Kategori dihapus');
     }
 }
