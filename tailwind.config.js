@@ -1,9 +1,9 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    "./resources/views/**/*.blade.php",
-    "./resources/js/**/*.js",
-    "./resources/css/**/*.css", // <— FIX PALING PENTING
+      "./resources/views/**/*.blade.php",
+      "./resources/js/**/*.js",
+      "./resources/css/**/*.css",
   ],
 
   theme: {
