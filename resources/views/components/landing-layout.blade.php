@@ -7,20 +7,18 @@
 
     @vite([
         'resources/css/app.css',
-        'resources/css/user.css',
+        'resources/css/pages/landing.css',
         'resources/js/app.js'
     ])
 </head>
 
 <body class="bg-softgray">
 
-    {{-- NAVBAR --}}
+    {{-- NAVIGATION --}}
     @include('layouts.navigation')
 
     {{-- PAGE CONTENT --}}
-    <main class="py-8">
-        {{ $slot }}
-    </main>
+    {{ $slot }}
 
     {{-- FOOTER --}}
     @include('layouts.footer')

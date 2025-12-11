@@ -23,6 +23,7 @@ use App\Http\Controllers\Admin\AdminDashboardController;
 
 // Landing Page (Marketing Page)
 Route::get('/', [HomeController::class, 'landing'])->name('landing');
+Route::get('/store/{id}', [StoreController::class, 'showPublic'])->name('store.show');
 
 // Products
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
@@ -31,7 +32,6 @@ Route::get('/products/{id}', [ProductController::class, 'show'])->name('products
 // Categories
 Route::get('/categories', [ProductCategoryController::class, 'index'])->name('categories.index');
 Route::get('/categories/{id}/products', [ProductCategoryController::class, 'listProducts'])->name('categories.products');
-
 
 
 /* AUTHENTICATED ROUTES (PROFILE) */
@@ -91,6 +91,8 @@ Route::middleware(['auth', 'role:member'])->group(function () {
     })->name('cart.add');
 
     Route::get('/cart', [CheckoutController::class, 'showCart'])->name('cart.index');
+    Route::delete('/cart/remove/{id}', [CheckoutController::class, 'remove'])
+    ->name('cart.remove');
 
 
     /* CHECKOUT */
@@ -103,6 +105,14 @@ Route::middleware(['auth', 'role:member'])->group(function () {
     Route::get('/transactions/{id}', [TransactionController::class, 'show'])->name('transactions.show');
 
 });
+
+Route::middleware(['auth', 'role:member'])
+    ->get('/seller/register-store', [StoreController::class, 'register'])
+    ->name('seller.store.register-form');
+
+Route::middleware(['auth', 'role:member'])
+    ->post('/seller/register-store', [StoreController::class, 'storeRegister'])
+    ->name('seller.store.register');
 
 /* SELLER ROUTES */
 
@@ -198,3 +208,4 @@ Route::middleware(['auth', 'role:admin'])
         Route::put('/categories/{id}', [ProductCategoryController::class, 'adminUpdate'])->name('categories.update');
         Route::delete('/categories/{id}', [ProductCategoryController::class, 'adminDestroy'])->name('categories.destroy');
     });
+require __DIR__.'/auth.php';

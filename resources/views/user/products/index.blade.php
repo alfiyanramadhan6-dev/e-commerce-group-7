@@ -1,19 +1,17 @@
-@extends('layouts.app')
+<x-user-layout title="Products">
 
-@section('content')
-<div class="max-w-7xl mx-auto px-6 py-10">
+    <h1 class="page-title">All Desserts</h1>
 
-  <h1 class="text-3xl font-bold text-textdark mb-6">All Desserts</h1>
+    <div class="grid-products">
+        @foreach ($products as $p)
+            <a href="{{ route('products.show', $p->id) }}" class="card">
+                @if ($p->images->first())
+                    <img src="{{ asset('storage/'.$p->images->first()->image) }}" class="h-40 w-full object-cover rounded-lg">
+                @endif
+                <h3 class="mt-3 font-semibold">{{ $p->name }}</h3>
+                <p>Rp {{ number_format($p->price, 0, ',', '.') }}</p>
+            </a>
+        @endforeach
+    </div>
 
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-    @foreach($products as $p)
-      <x-product-card :product="$p" />
-    @endforeach
-  </div>
-
-  <div class="mt-10">
-    {{ $products->links() }}
-  </div>
-
-</div>
-@endsection
+</x-user-layout>

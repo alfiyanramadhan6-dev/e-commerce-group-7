@@ -1,5 +1,4 @@
-@import "./pages/landing.css";
-@import "./pages/user.css";
+@import "pages/landing.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -63,8 +62,4 @@
 
 .product-card {
     @apply bg-softgray p-4 rounded-xl border hover:shadow-soft-lg transition;
-}
-
-p {
-    color: blue !important;
 }
